@@ -2,11 +2,8 @@ package frc.robot.subsystems.SwerveDrive;
 
 import com.ctre.phoenix6.hardware.Pigeon2;
 import edu.wpi.first.math.geometry.Rotation2d;
-import edu.wpi.first.math.kinematics.ChassisSpeeds;
-import edu.wpi.first.math.kinematics.SwerveDriveKinematics;
-import edu.wpi.first.math.kinematics.SwerveDriveOdometry;
-import edu.wpi.first.math.kinematics.SwerveModulePosition;
-import edu.wpi.first.math.kinematics.SwerveModuleState;
+import edu.wpi.first.math.geometry.Translation2d;
+import edu.wpi.first.math.kinematics.*;
 import edu.wpi.first.networktables.NetworkTableInstance;
 import edu.wpi.first.networktables.StructArrayPublisher;
 import edu.wpi.first.wpilibj.DataLogManager;
@@ -17,7 +14,6 @@ import edu.wpi.first.util.datalog.DataLog;
 import edu.wpi.first.util.datalog.StringLogEntry;
 
 public class SwerveSubsystem extends SubsystemBase {
-
     private final Pigeon2 gyro;
     private final SwerveDriveKinematics kinematics;
     private final SwerveDriveOdometry odometry;
@@ -27,8 +23,9 @@ public class SwerveSubsystem extends SubsystemBase {
     private final StringLogEntry moduleStatesLogEntry;
 
     public SwerveSubsystem() {
+        
         gyro = new Pigeon2(Constants.PIGEON_ID);
-        resetGyroOrientation();
+        resetGyro();
 
         DataLog log_subsytem = DataLogManager.getLog();
         moduleStatesLogEntry = new StringLogEntry(log_subsytem, "SwerveSubsystem/module states: ");
@@ -49,7 +46,7 @@ public class SwerveSubsystem extends SubsystemBase {
         odometry = new SwerveDriveOdometry(kinematics, getRotation2d(), getModulePositions());
     }
 
-    private void resetGyroOrientation() {
+    private void resetGyro() {
         new Thread(() -> {
             try {
                 Thread.sleep(1000);
@@ -68,16 +65,15 @@ public class SwerveSubsystem extends SubsystemBase {
 
     @Override
     public void periodic() {
-        
         super.periodic();
-        // captura e log dos estados dos módulos
+
         StringBuilder statesLog = new StringBuilder();
         for (SwerveModule module : modules) {
             statesLog.append(module.getState().toString()).append("\n");
         }
         moduleStatesLogEntry.append(statesLog.toString());
-        odometry.update(getRotation2d(), getModulePositions());
 
+        odometry.update(getRotation2d(), getModulePositions());
         updateSmartDashboard();
 
         publisher.set(states);
@@ -88,7 +84,7 @@ public class SwerveSubsystem extends SubsystemBase {
         SmartDashboard.putNumber("Max Speed", getMaxSpeed());
 
         for (int i = 0; i < modules.length; i++) {
-            SmartDashboard.putNumber("CANCoder Angle Module " + i, modules[i].CANcoderValueInRadians());
+            SmartDashboard.putNumber("CANCoder Angle Module " + i, modules[i].CANcoderValueInDegrees());
         }
     }
 
@@ -103,12 +99,14 @@ public class SwerveSubsystem extends SubsystemBase {
         return Math.min(maxSpeed, 1.0);
     }
 
-    public void ChassisSpeed(double xSpeed, double ySpeed, double rot) {
-        ChassisSpeeds chassisSpeeds = new ChassisSpeeds(xSpeed, ySpeed, rot);
-        SwerveModuleState[] desiredStates = kinematics.toSwerveModuleStates(chassisSpeeds);
-        setModuleStates(desiredStates);
-    }
+    public void drive(Translation2d translation, double rotation, boolean fieldRelative, boolean isOpenLoop) {
+    ChassisSpeeds chassisSpeeds = fieldRelative
+        ? ChassisSpeeds.fromFieldRelativeSpeeds(translation.getX(), translation.getY(), rotation, getRotation2d())
+        : new ChassisSpeeds(translation.getX(), translation.getY(), rotation);
 
+    SwerveModuleState[] swerveModuleStates = kinematics.toSwerveModuleStates(chassisSpeeds);
+    setModuleStates(swerveModuleStates);
+}
     public void setModuleStates(SwerveModuleState[] desiredStates) {
         SwerveDriveKinematics.desaturateWheelSpeeds(desiredStates, Constants.MAX_SPEED);
         for (int i = 0; i < modules.length; i++) {
@@ -129,19 +127,19 @@ public class SwerveSubsystem extends SubsystemBase {
         for (int i = 0; i < modules.length; i++) {
             positions[i] = new SwerveModulePosition(
                 modules[i].getDriveMotorPosition(),
-                Rotation2d.fromDegrees(modules[i].CANcoderValueInRadians())
+                Rotation2d.fromDegrees(modules[i].CANcoderValueInDegrees())
             );
         }
         return positions;
     }
-    public void resetModules() {
-      for (SwerveModule module : modules) {
-          module.resetPosition();
-      }
-  }
+
     public void stopModules() {
         for (SwerveModule module : modules) {
             module.stop();
         }
+    }
+
+    public SwerveModule[] getModule() {
+        return modules;
     }
 }

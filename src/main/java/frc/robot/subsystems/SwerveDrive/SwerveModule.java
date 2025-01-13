@@ -6,9 +6,6 @@ import edu.wpi.first.math.controller.PIDController;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.kinematics.SwerveModuleState;
 import edu.wpi.first.math.util.Units;
-import edu.wpi.first.util.datalog.DoubleLogEntry;
-import edu.wpi.first.wpilibj.DataLogManager;
-import edu.wpi.first.util.datalog.DataLog;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.robot.Constants;
 
@@ -21,13 +18,13 @@ public class SwerveModule extends SubsystemBase {
 
     private double lastSpeed = 0;
     private double lastPosition = 0;
+    private Rotation2d lastAngle = new Rotation2d(0); 
 
-    
     public SwerveModule(int driveMotorID, int angleMotorID, int cancoderID) {
         driveMotor = new SparkMax(driveMotorID, SparkMax.MotorType.kBrushless);
         angMotor = new SparkMax(angleMotorID, SparkMax.MotorType.kBrushless);
         cancoder = new CANcoder(cancoderID);
-        anglePID = new PIDController(Constants.KP_Swerve, Constants.KI_Swerve, Constants.KD_Swerve);
+        anglePID = new PIDController(Constants.KP_Swerve_ANGLE, Constants.KI_Swerve_ANGLE, Constants.KD_Swerve_ANGLE);
     
         initMotors();
     }
@@ -40,27 +37,40 @@ public class SwerveModule extends SubsystemBase {
     public void periodic() {
         
     }
-
-    // Returns current state of the module (speed and angle)
+    
     public SwerveModuleState getState() {
-        return new SwerveModuleState(getDriveSpd(), new Rotation2d(CANcoderValueInRadians()));
+        return new SwerveModuleState(getDriveSpd(), new Rotation2d(CANcoderValueInDegrees()));
     }
 
+    private SwerveModuleState optimizeState(SwerveModuleState desiredState) {
+        double currentAngle = lastAngle.getDegrees();
+        double targetAngle = desiredState.angle.getDegrees();
+
+        double delta = targetAngle - currentAngle;
+        if (Math.abs(delta) > 90) {
+            delta = (delta + 180) % 360 - 180; 
+            desiredState = new SwerveModuleState(-desiredState.speedMetersPerSecond, Rotation2d.fromDegrees(currentAngle + delta));
+        }
+
+        return desiredState;
+    }
     public void setDesiredState(SwerveModuleState state) {
         if (Math.abs(state.speedMetersPerSecond) < 0.001) {
             stop();
             return;
         }
 
-        state.optimize(getState().angle);
+        state = optimizeState(state);
 
         driveMotor.set(state.speedMetersPerSecond / Constants.kMaxAcelleration);
-        angMotor.set(anglePID.calculate(CANcoderValueInRadians(), state.angle.getRadians()));
+        angMotor.set(anglePID.calculate(CANcoderValueInDegrees(), state.angle.getRadians()));
+
+        lastAngle = state.angle;
     }
 
-    public double CANcoderValueInRadians() {
+    public double CANcoderValueInDegrees() {
         double rot = cancoder.getAbsolutePosition().getValueAsDouble();
-        return Units.rotationsToRadians(rot);
+        return Units.rotationsToDegrees(rot);
     }
 
     public double getDriveSpd() {
@@ -70,6 +80,7 @@ public class SwerveModule extends SubsystemBase {
         }
         return lastSpeed;
     }
+
     public double getDriveMotorPosition() {
         double currentPosition = cancoder.getPosition().getValueAsDouble();
         if (Math.abs(currentPosition - lastPosition) > 0.01) {
@@ -83,9 +94,7 @@ public class SwerveModule extends SubsystemBase {
         angMotor.set(0);
     }
 
-    public void resetPosition() {
-  
-    double reset = anglePID.calculate(CANcoderValueInRadians(), 0);
-    angMotor.set(reset);
-  }
+    public void setRotationSpeed(double speed) {
+        angMotor.set(speed); 
+    }
 }

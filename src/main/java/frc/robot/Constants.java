@@ -33,9 +33,9 @@ public final class Constants {
   public static final double kDeadband = 0.05;
   public static final double kMaxAcelleration = 1.0;
   public static final double kMaxAngularAcelleration = Math.PI;
-  public static final double kMetersPerSec = 5;
+  public static final double kMetersPerSec = 4.5;
   public static final double kRadiansPerSec = Math.PI;
-
+ public static final double  SLOW_ROTATION_SPEED = 0.05;
   // Motor & Encoder IDs
   public static final int MOTOR_LEFT_DRIVER_FRONT = 1;
   public static final int MOTOR_LEFT_DRIVER_BACK = 3;
@@ -57,9 +57,9 @@ public final class Constants {
   public static final int CANCODER_BACK_RIGHT = 14;
 
   // PID Constants for Swerve
-  public static final double KP_Swerve = 0.5;
-  public static final double KI_Swerve = 0.0;
-  public static final double KD_Swerve = 0.0;
+  public static final double KP_Swerve_ANGLE = 0.0;
+  public static final double KI_Swerve_ANGLE = 0.0;
+  public static final double KD_Swerve_ANGLE = 0.0;
 
   // Joystick Button Mapping
   public static final int LEFT_STICK_Y = 1;
@@ -71,7 +71,7 @@ public final class Constants {
   public static final int BNT_X = 3;
 
   // Maximum Speed
-  public static final double MAX_SPEED = 1.0;
+  public static final double MAX_SPEED = 1;
 
   // Conversion Constants
   public static final double kDriveEncoderRot2Meter = (Math.PI * kWheelDiameterMeters) / kDriveMotorGearRatio;
