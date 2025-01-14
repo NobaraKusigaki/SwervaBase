@@ -6,6 +6,8 @@ import edu.wpi.first.math.controller.PIDController;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.kinematics.SwerveModuleState;
 import edu.wpi.first.math.util.Units;
+import edu.wpi.first.networktables.DoubleArrayPublisher;
+import edu.wpi.first.networktables.NetworkTableInstance;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.robot.Constants;
 
@@ -35,7 +37,6 @@ public class SwerveModule extends SubsystemBase {
 
     @Override
     public void periodic() {
-        
     }
     
     public SwerveModuleState getState() {
@@ -63,14 +64,23 @@ public class SwerveModule extends SubsystemBase {
         state = optimizeState(state);
 
         driveMotor.set(state.speedMetersPerSecond / Constants.kMaxAcelleration);
-        angMotor.set(anglePID.calculate(CANcoderValueInDegrees(), state.angle.getRadians()));
+        angMotor.set(anglePID.calculate(CANcoderValueInDegrees(), state.angle.getDegrees()));
 
         lastAngle = state.angle;
     }
 
+    public double CANcoderValue(){
+        return cancoder.getAbsolutePosition().getValueAsDouble();
+    }
+
     public double CANcoderValueInDegrees() {
         double rot = cancoder.getAbsolutePosition().getValueAsDouble();
-        return Units.rotationsToDegrees(rot);
+        return Units.rotationsToDegrees(rot) + 180;
+    }
+
+    public double CANcoderValueInRadians(){
+        double rot = cancoder.getAbsolutePosition().getValueAsDouble();
+        return Units.rotationsToRadians(rot);
     }
 
     public double getDriveSpd() {

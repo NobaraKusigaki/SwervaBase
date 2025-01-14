@@ -9,7 +9,6 @@ import edu.wpi.first.wpilibj2.command.button.JoystickButton;
 public class RobotContainer {
   private final SwerveSubsystem swerveSubsystem = new SwerveSubsystem();
   private final Joystick joy = new Joystick(Constants.JOY_PORT);
-  private final WheelsReset resetCommand = new WheelsReset(swerveSubsystem);
 
   public RobotContainer() {
    swerveSubsystem.setDefaultCommand(new TeleopSwerve(swerveSubsystem,
@@ -17,13 +16,16 @@ public class RobotContainer {
    ()-> joy.getRawAxis(Constants.LEFT_STICK_X),
    ()-> joy.getRawAxis(Constants.RIGHT_ROT_AXIS), 
    ()-> joy.getRawButton(Constants.BNT_A),
-   ()-> joy.getRawButton(Constants.BNT_B)));
+   ()-> joy.getRawButton(Constants.BNT_B),
+   () -> joy.getPOV()));
+
     configureBindings();
   }
   
   private void configureBindings() {
-   
-}
+    //new JoystickButton(joy, 4)
+    //  .onTrue(new WheelsReset(swerveSubsystem).withTimeout(0.5));
+  }
 
   /*public Command getAutonomousCommand() {
    

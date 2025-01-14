@@ -57,9 +57,9 @@ public final class Constants {
   public static final int CANCODER_BACK_RIGHT = 14;
 
   // PID Constants for Swerve
-  public static final double KP_Swerve_ANGLE = 0.0;
-  public static final double KI_Swerve_ANGLE = 0.0;
-  public static final double KD_Swerve_ANGLE = 0.0;
+  public static final double KP_Swerve_ANGLE = 0.006;
+  public static final double KI_Swerve_ANGLE = 0.0001;
+  public static final double KD_Swerve_ANGLE = 0.001;
 
   // Joystick Button Mapping
   public static final int LEFT_STICK_Y = 1;

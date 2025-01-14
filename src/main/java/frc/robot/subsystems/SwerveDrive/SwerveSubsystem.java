@@ -4,6 +4,7 @@ import com.ctre.phoenix6.hardware.Pigeon2;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.math.kinematics.*;
+import edu.wpi.first.networktables.DoubleArrayPublisher;
 import edu.wpi.first.networktables.NetworkTableInstance;
 import edu.wpi.first.networktables.StructArrayPublisher;
 import edu.wpi.first.wpilibj.DataLogManager;
@@ -21,6 +22,9 @@ public class SwerveSubsystem extends SubsystemBase {
     private final SwerveModuleState[] states;
     private final StructArrayPublisher<SwerveModuleState> publisher;
     private final StringLogEntry moduleStatesLogEntry;
+
+    private double[] angleRaw, angleDegress, angleRadian;
+    private final DoubleArrayPublisher angleRawPbl, angleDegressPbl, angleRadianPbl;
 
     public SwerveSubsystem() {
         
@@ -41,7 +45,17 @@ public class SwerveSubsystem extends SubsystemBase {
         states = new SwerveModuleState[modules.length];
 
         publisher = NetworkTableInstance.getDefault().getStructArrayTopic("MyStates", SwerveModuleState.struct).publish();
+        
+        angleRawPbl = NetworkTableInstance.getDefault().getDoubleArrayTopic("Angle Brute Values").publish();
+        angleDegressPbl = NetworkTableInstance.getDefault().getDoubleArrayTopic("Angle Degress Values").publish();
+        angleRadianPbl = NetworkTableInstance.getDefault().getDoubleArrayTopic("Angle Radian Values").publish();
+
+
         initializeModuleStates();
+
+        angleRaw = new double[modules.length];
+        angleDegress = new double[modules.length];
+        angleRaw = new double[modules.length];
 
         odometry = new SwerveDriveOdometry(kinematics, getRotation2d(), getModulePositions());
     }
@@ -71,12 +85,22 @@ public class SwerveSubsystem extends SubsystemBase {
         for (SwerveModule module : modules) {
             statesLog.append(module.getState().toString()).append("\n");
         }
+
+        for(int i = 0; i < modules.length; i++){
+            angleRaw[i] = modules[i].CANcoderValue();
+            angleDegress[i] = modules[i].CANcoderValueInDegrees();
+            //angleRadian[i] = modules[i].CANcoderValueInRadians();
+        }
+
         moduleStatesLogEntry.append(statesLog.toString());
 
         odometry.update(getRotation2d(), getModulePositions());
         updateSmartDashboard();
 
         publisher.set(states);
+        angleRawPbl.set(angleRaw);
+        angleDegressPbl.set(angleDegress);
+        //angleRadianPbl.set(angleRadian);
     }
 
     private void updateSmartDashboard() {

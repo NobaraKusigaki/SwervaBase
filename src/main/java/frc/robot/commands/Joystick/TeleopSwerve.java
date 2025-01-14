@@ -17,6 +17,7 @@ import frc.robot.subsystems.SwerveDrive.SwerveSubsystem;
 public class TeleopSwerve extends Command {
   private final SwerveSubsystem subSwerve;
   private final Supplier<Double> x, y, turning;
+  private final Supplier<Integer> povSupplier;
   private final Supplier<Boolean> robotCentral, buttonBPressed;
   private final SlewRateLimiter xLimiter = new SlewRateLimiter(3.0);
   private final SlewRateLimiter yLimiter = new SlewRateLimiter(3.0);
@@ -25,10 +26,12 @@ public class TeleopSwerve extends Command {
   private boolean resetScheduled = false;
 
   public TeleopSwerve(SwerveSubsystem subSwerve, Supplier<Double> x, Supplier<Double> y, 
-                      Supplier<Double> turning, Supplier<Boolean> robotCentral, Supplier<Boolean> buttonBPressed) {
+                      Supplier<Double> turning, Supplier<Boolean> robotCentral, Supplier<Boolean> buttonBPressed,
+                      Supplier<Integer> povSupplier) {
     this.subSwerve = subSwerve;
     this.x = x;
     this.y = y;
+    this.povSupplier = povSupplier;
     this.turning = turning;
     this.robotCentral = robotCentral;
     this.buttonBPressed = buttonBPressed;
@@ -54,10 +57,11 @@ public class TeleopSwerve extends Command {
       double xAxis = xLimiter.calculate(MathUtil.applyDeadband(x.get(), Constants.kDeadband)) * Constants.kMetersPerSec;
       double yAxis = yLimiter.calculate(MathUtil.applyDeadband(y.get(), Constants.kDeadband)) * Constants.kMetersPerSec;
       double turningAxis = tLimiter.calculate(MathUtil.applyDeadband(turning.get(), Constants.kDeadband)) * Constants.kRadiansPerSec;
-
+      double pov = povSupplier.get();
       SmartDashboard.putNumber("Joystick X", xAxis);
       SmartDashboard.putNumber("Joystick Y", yAxis);
       SmartDashboard.putNumber("Joystick Turning", turningAxis);
+      SmartDashboard.putNumber("POV", pov);
 
       if (Math.abs(xAxis) > 0 || Math.abs(yAxis) > 0 || Math.abs(turningAxis) > 0) {
         Translation2d translation = new Translation2d(xAxis, yAxis);
